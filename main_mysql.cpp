@@ -1,2 +1,4 @@
 #include <iostream>
-gw kira dah ada
+
+// gw kira dah ada 
+// Belom anj
