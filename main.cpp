@@ -4,7 +4,7 @@
 
 using namespace std;
 
-struct User{
+struct User {
 string username;
 string password;
 };
@@ -22,7 +22,7 @@ long long int jumlah_saldo;
 };
 
 bool signup(const User &pengguna){
-ofstream database("Data akun.txt", ios::app);
+ofstream database("data.txt", ios::app); // ini file nya disimpen dimana rend?
 if (!database.is_open()){
     cerr << "Maaf sepertinya ada operasi yang error" << endl;
     return false;
@@ -34,7 +34,7 @@ return true;
 }
 
 bool login(const User &pengguna){
-ifstream database ("Data akun.txt");
+ifstream database ("data.txt");
 string db_username,db_password;
 if (!database.is_open()){
     cerr << "Maaf Sepertinya ada yang salah" << endl;
