@@ -20,5 +20,5 @@ struct saldo {
 };
 
 int main() {
-  
+
 }
