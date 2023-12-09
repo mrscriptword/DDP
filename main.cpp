@@ -17,17 +17,7 @@ struct Profile {
     string usia;
     struct Profile *next;
 };
-bool signup(const User &pengguna) {
-    ofstream database("Data akun.txt", ios::app);
-    if (!database.is_open()) {
-        cerr << "Maaf sepertinya ada operasi yang error" << endl;
-        return false;
-    }
-    database << pengguna.username << " " << pengguna.password << endl;
-    database.close();
-    cout << "Selamat akun anda telah berhasil dibuat" << endl;
-    return true;
-}
+
 bool login(const User &pengguna) {
     ifstream database("Data akun.txt");
     string db_username, db_password;
@@ -40,12 +30,20 @@ bool login(const User &pengguna) {
         if (pengguna.username == db_login.username && pengguna.password == db_login.password) {
             database.close();
             cout << "Anda telah berhasil login" << endl;
+            cout << "-------------------------" << endl;
+            cout << endl;
             return true;
+        } else {
+         cout << "Sepertinya anda memasukan sandi atau username yang salah" << endl;
+         cout << "--------------------------------------------------------" << endl;
+         cout << endl;
+         return false;
         }
     }
     database.close();
     return false;
 }
+bool inisiasi = false;
 
 void tambahprf(Profile **head){
     Profile *tambah = new Profile();
@@ -62,6 +60,16 @@ void tambahprf(Profile **head){
     }
     temp->next = tambah;
 }
+
+void instalasi(){
+    struct Profile *HEAD = NULL;
+if (!inisiasi){
+    tambahprf(&HEAD);
+    inisiasi = true;
+} else {
+cout << " " << endl;
+}
+}
 void profil(Profile *head){
     Profile *temp = head;
     if (temp==NULL){
@@ -75,6 +83,20 @@ void profil(Profile *head){
     }
     cout << endl;
 }
+bool signup(const User &pengguna) {
+    ofstream database("Data akun.txt", ios::app);
+    if (!database.is_open()) {
+        cerr << "Maaf sepertinya ada operasi yang error" << endl;
+        return false;
+    }
+    database << pengguna.username << " " << pengguna.password << endl;
+    database.close();
+    cout << "Selamat akun anda telah berhasil dibuat" << endl;
+    cout << "---------------------------------------" << endl;
+    cout << endl;
+    cout << "Silahkan Tambahkan Profil........." << endl;
+    return true;
+}
 void daftar() {
     User pengguna;
     cout << "Masuan Username: ";
@@ -82,6 +104,7 @@ void daftar() {
     cout << "Masukan Password: ";
     cin >> pengguna.password;
     signup(pengguna);
+    instalasi();
 }
 void masuk() {
     User pengguna;
@@ -91,6 +114,7 @@ void masuk() {
     cin >> pengguna.password;
     login(pengguna);
 }
+
 
 int main() {
     int menu;
@@ -108,9 +132,8 @@ int main() {
         } else if (menu == 2) {
             masuk();
         } else if (menu == 3) {
-            tambahprf(&HEAD);
-        } else if (menu == 4){
             profil(HEAD);
+        } else if (menu == 4){
         }
     } while (menu != 7);
 
