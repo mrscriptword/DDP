@@ -1,23 +1,14 @@
-project/
-|-- CMakeLists.txt
+DDP/
+|-- Makefile
 |-- include/
-|   |-- my_header.h
+|   |-- termcolor.hpp
 |-- src/
 |   |-- main.cpp
-|   |-- my_source.cpp
-|-- lib/
-|   |-- my_library.cpp
-|   |-- my_library.h
 |-- build/
-|-- bin/
-
-project_directory/
-|-- src/
-|   |-- main.cpp          // File utama program
-|   |-- translation.cpp   // Berkas terkait terjemahan
-|   |-- translation.h     // Header untuk translation.cpp
-|-- lang/
-|   |-- english.txt       // File teks untuk bahasa Inggris
-|   |-- indonesian.txt    // File teks untuk bahasa Indonesia
-|-- build/                // Direktori untuk menyimpan file hasil kompilasi
-|-- CMakeLists.txt        // File konfigurasi CMake untuk proyek
+    |-- bin/
+    |   |-- main.o
+    |-- data/
+    |   |-- login_info.txt
+    |   |-- users.txt
+    |-- msys-2.0.dll
+    |-- WangkuApp.exe

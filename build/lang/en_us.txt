@@ -1,3 +1,0 @@
-greeting="Selamat datang kembali, " << INFO << loggedInUser.fullName << RESET << "!"
-menu=Menu
-exit=Exit

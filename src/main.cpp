@@ -1,9 +1,13 @@
 #include <iostream>
 #include <fstream>
 #include <vector>
+#include <cstdio>
 #include <cstdlib>
 #include <string>
 #include <iomanip>
+#include <sys/stat.h>
+#include <filesystem>
+#include "termcolor.hpp"
 
 using namespace std;
 
@@ -47,14 +51,122 @@ vector<Wallet> wallets;
 
 vector<Transaction> transactions;
 
+// Prototype Fungsi
+void clearScreen();
+void systempause();
 void addWallet();
+double getWalletBalance(const string& walletName);
+void updateWalletBalance(const string& walletName, double amount);
+void displayWallets();
+void addWallet();
+void signUp();
+void saveLoginInfo(const UserData& user);
+bool readSavedLoginInfo(UserData& user);
+bool signIn(UserData& loggedInUser);
+bool hasWallet();
+void performTransaction(const string& type);
+void displayHistory();
+void displayProfile(const UserData& user);
+double getTotalBalance();
+void createDataFolder();
+void menuTransaction();
+void infoApps();
+
+int main() {
+  int choice;
+  UserData loggedInUser;
+
+  createDataFolder();
+
+  do {
+    if (readSavedLoginInfo(loggedInUser)) {
+      clearScreen();
+      cout << "Welcome back to Wangku, " << INFO << loggedInUser.fullName << RESET << "!" << endl;
+      cout << fixed << setprecision(2) << "\nTotal Balance: Rp " << INFO << getTotalBalance() << RESET << endl;
+
+      cout << defaultfloat;
+    }
+
+    if (loggedInUser.username.empty()) {
+      clearScreen();
+
+      cout << "\n####### LOGIN MENU #######\n";
+      cout << "[" << INFO << "1" << RESET << "] Sign up" << endl;
+      cout << "[" << INFO << "2" << RESET << "] Sign in" << endl;
+    } else {
+      cout << "\n######## MAIN MENU ########\n";
+      cout << "[" << INFO << "1" << RESET << "] Transaction" << endl;
+      cout << "[" << INFO << "2" << RESET << "] Wallets" << endl;
+      cout << "[" << INFO << "3" << RESET << "] History" << endl;
+      cout << "[" << INFO << "4" << RESET << "] Profile" << endl;
+      cout << "[" << INFO << "5" << RESET << "] Info App" << endl;
+      cout << "[" << INFO << "6" << RESET << "] Logout" << endl;
+    }
+    cout << "[" << INFO << "0" << RESET << "] Exit" << endl;
+    cout << "Your choice: ";
+    cin >> choice;
+
+    switch (choice) {
+      case 1:
+        if (loggedInUser.username.empty()) {
+          signUp();
+        } else {
+          menuTransaction();
+        }
+        break;
+      case 2:
+        if (loggedInUser.username.empty()) {
+          if (signIn(loggedInUser)) {
+            cout << "\nWelcome to Wangku, " << INFO << loggedInUser.fullName << RESET << "!" << endl;
+            saveLoginInfo(loggedInUser);
+            systempause();
+          }
+        } else {
+          displayWallets();
+        }
+        break;
+      case 3:
+        displayHistory();
+        break;
+      case 4:
+        displayProfile(loggedInUser);
+        break;
+      case 5:
+        infoApps();
+        break;
+      case 6:
+        if (!loggedInUser.username.empty()) {
+          cout << "\n" << BG_SUCCESS << " SUCCESS " << RESET << " Logout successful!" << endl;
+          systempause();
+          loggedInUser = UserData();
+          saveLoginInfo(loggedInUser);
+        }
+        break;
+      case 0:
+        cout << "\n" << BG_INFO << " INFO " << RESET << " Thank you, see you again!" << endl;
+        systempause();
+        break;
+      default:
+        cout << "\n" << BG_WARNING << " WARNING " << RESET << " Invalid selection. Please try again." << endl;
+        systempause();
+    }
+  } while (choice != 0);
+
+  return 0;
+}
 
 void clearScreen() {
-  cout << "\033[2J\033[H";  // ANSI escape code untuk membersihkan layar
+  #ifdef _WIN32
+    system("cls");  // Untuk Windows
+  #else
+    system("clear");  // Untuk Unix
+  #endif
+
+  cout << "\033[2J\033[H";
 }
 
 void systempause() {
-  cout << "Press Enter to continue...";
+  cout << "\nPress Enter to continue...";
   cin.ignore();
   cin.get();
 }
@@ -84,7 +196,7 @@ void displayWallets() {
     cout << "No wallet yet" << endl;
 
     cout << "\n[" << INFO << "1" << RESET << "] Add a new wallet" << endl;
-    cout << "[" << INFO << "0" << RESET << "] Cancel" << endl;
+    cout << "[" << INFO << "0" << RESET << "] Back" << endl;
 
     int choice;
     cout << "Your choice (1/0): "; cin >> choice;
@@ -93,7 +205,7 @@ void displayWallets() {
       case 1:
         addWallet();
         break;
-      case 2:
+      case 0:
         break;
       default:
         cout << "\n" << BG_WARNING << " WARNING " << RESET << " Invalid choice. Please try again." << endl;
@@ -105,7 +217,7 @@ void displayWallets() {
     }
 
     cout << "\n[" << INFO << "1" << RESET << "] Add a new wallet" << endl;
-    cout << "[" << INFO << "0" << RESET << "] Cancel" << endl;
+    cout << "[" << INFO << "0" << RESET << "] Back" << endl;
 
     int choice;
     cout << "Your choice (1/0): "; cin >> choice;
@@ -114,7 +226,7 @@ void displayWallets() {
       case 1:
         addWallet();
         break;
-      case 2:
+      case 0:
         break;
       default:
         cout << "\n" << BG_WARNING << " WARNING " << RESET << " Invalid choice. Please try again." << endl;
@@ -143,7 +255,7 @@ void addWallet() {
 void signUp() {
   UserData user;
 
-  cout << "Enter username: ";
+  cout << "\nEnter username: ";
   cin >> user.username;
 
   cout << "Enter password: ";
@@ -157,11 +269,16 @@ void signUp() {
   if (database.is_open()) {
     database << user.username << " " << user.password << " " << user.fullName << endl;
     cout << "\n" << BG_SUCCESS << " SUCCESS " << RESET << " Sign up successfull!" << endl;
-    systempause();
+
+    cout << "\nPress Enter to continue...";
+    cin.get();
+
     database.close();
   } else {
     cout << "\n" << BG_ERROR << " ERROR " << RESET << " Failed to open file." << endl;
-    systempause();
+
+    cout << "\nPress Enter to continue...";
+    cin.get();
   }
 }
 
@@ -192,7 +309,7 @@ bool signIn(UserData& loggedInUser) {
   UserData user;
   string db_username, db_password;
 
-  cout << "Enter username: ";
+  cout << "\nEnter username: ";
   cin >> db_username;
 
   cout << "Enter password: ";
@@ -203,7 +320,6 @@ bool signIn(UserData& loggedInUser) {
     while (database >> user.username >> user.password >> user.fullName) {
       if (user.username == db_username && user.password == db_password) {
         cout << "\n" << BG_SUCCESS << " SUCCESS " << RESET << " Sign in successfull!\n" << endl;
-        systempause();
         database.close();
 
         loggedInUser = user;
@@ -212,17 +328,29 @@ bool signIn(UserData& loggedInUser) {
       }
     }
     cout << "\n" << BG_WARNING << " WARNING " << RESET << " Incorrect username or password." << endl;
-    systempause();
+
+    cout << "\nPress Enter to continue...";
+    cin.get();
+
     database.close();
   } else {
     cout << "\n" << BG_ERROR << " ERROR " << RESET << " Failed to open file." << endl;
-    systempause();
+
+    cout << "\nPress Enter to continue...";
+    cin.get();
   }
 
   return false;
 }
 
 void performTransaction(const string& type) {
+  if (!hasWallet()) {
+    cout << endl;
+    cout << BG_WARNING << " WARNING " << RESET << " No wallets available. Please create a wallet first." << endl;
+    systempause();
+    return;
+  }
+
   string walletName;
   double amount;
   string transactionName;
@@ -277,9 +405,11 @@ void displayHistory() {
 }
 
 void displayProfile(const UserData& user) {
-  cout << "\n###### PROFILE ######\n";
+  cout << "\n######### USER PROFILE #########\n" << endl;
   cout << "Username: " << user.username << endl;
   cout << "Full Name: " << user.fullName << endl;
+  cout << fixed << setprecision(2) << "\nTotal Balance: Rp " << INFO << getTotalBalance() << RESET << endl;
+  cout << "\n################################\n" << endl;
 
   systempause();
 }
@@ -290,6 +420,31 @@ double getTotalBalance() {
     totalBalance += wallet.balance;
   }
   return totalBalance;
+}
+
+bool hasWallet() {
+  return !wallets.empty();
+}
+
+void createDataFolder() {
+  // Check if the "data" folder exists
+  struct stat info;
+  if (stat("data", &info) != 0) {
+    // "data" folder does not exist, create it
+    #ifdef _WIN32
+      // For Windows
+      if (mkdir("data") != 0) {
+    #else
+      // For Linux and macOS
+      if (mkdir("data", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) != 0) {
+    #endif
+      cout << BG_ERROR << " ERROR " << RESET << " Failed to create 'data' folder." << endl;
+      systempause();
+      exit(EXIT_FAILURE);
+    } else {
+      cout << BG_SUCCESS << " SUCCESS " << RESET << " 'data' folder created successfully." << endl;
+    }
+  }
 }
 
 void menuTransaction() {
@@ -319,75 +474,23 @@ void menuTransaction() {
   }
 }
 
-int main() {
-  int choice;
-  UserData loggedInUser;
+void infoApps() {
+  clearScreen();
 
-  do {
-    if (readSavedLoginInfo(loggedInUser)) {
-      clearScreen();
-      cout << "Welcome back, " << INFO << loggedInUser.fullName << RESET << "!" << endl;
-      cout << fixed << setprecision(2) << "\nTotal Balance: Rp " << INFO << getTotalBalance() << RESET << endl;
+  cout << BG_INFO << "            INFO APPS             " << RESET << endl;
+  cout << INFO <<    "==================================" << RESET << endl;
+  cout << INFO <<    "     Welcome to Wangku App        " << RESET << endl;
+  cout << INFO <<    "==================================\n" << RESET << endl;
+  cout <<            "Version: " << SUCCESS << "2.0.0" << RESET << endl;
+  cout <<            "Release: " << SUCCESS << "22 Dec 2023" << RESET << endl;
+  cout <<            "Team Members:" << endl;
+  cout <<            "  1 | " << SUCCESS << "Rendy" << RESET << endl;
+  cout <<            "  2 | " << SUCCESS << "Tirta" << RESET << endl;
+  cout <<            "  3 | " << SUCCESS << "Hafidz" << RESET << endl;
+  cout <<            "  4 | " << SUCCESS << "Shafira" << RESET << endl;
+  cout <<            "  5 | " << SUCCESS << "Rifqi" << RESET << endl;
+  cout <<            "  6 | " << SUCCESS << "Yola" << RESET << endl;
+  cout << INFO <<    "\n=================================" << RESET << endl;
 
-      cout << defaultfloat;
-    }
-
-    cout << "\n###### MENU ######\n";
-    if (loggedInUser.username.empty()) {
-      cout << "[" << INFO << "1" << RESET << "] Sign up" << endl;
-      cout << "[" << INFO << "2" << RESET << "] Sign in" << endl;
-    } else {
-      cout << "[" << INFO << "1" << RESET << "] Transaction" << endl;
-      cout << "[" << INFO << "2" << RESET << "] Wallets" << endl;
-      cout << "[" << INFO << "3" << RESET << "] History" << endl;
-      cout << "[" << INFO << "4" << RESET << "] Profile" << endl;
-      cout << "[" << INFO << "5" << RESET << "] Logout" << endl;
-    }
-    cout << "[" << INFO << "0" << RESET << "] Exit" << endl;
-    cout << "Your choice (1/2/3/0): ";
-    cin >> choice;
-
-    switch (choice) {
-      case 1:
-        if (loggedInUser.username.empty()) {
-          signUp();
-        } else {
-          menuTransaction();
-        }
-        break;
-      case 2:
-        if (loggedInUser.username.empty()) {
-          if (signIn(loggedInUser)) {
-            cout << "Welcome, " << INFO << loggedInUser.fullName << RESET << "!" << endl;
-            saveLoginInfo(loggedInUser);
-          }
-        } else {
-          displayWallets();
-        }
-        break;
-      case 3:
-        displayHistory();
-        break;
-      case 4:
-        displayProfile(loggedInUser);
-        break;
-      case 5:
-        if (!loggedInUser.username.empty()) {
-          cout << "\n" << BG_SUCCESS << " SUCCESS " << RESET << " Logout successful!" << endl;
-          systempause();
-          loggedInUser = UserData();
-          saveLoginInfo(loggedInUser);
-        }
-        break;
-      case 0:
-        cout << "\n" << BG_INFO << " INFO " << RESET << " Thank you, see you again!" << endl;
-        systempause();
-        break;
-      default:
-        cout << "\n" << BG_WARNING << " WARNING " << RESET << " Invalid selection. Please try again." << endl;
-        systempause();
-    }
-  } while (choice != 0);
-
-  return 0;
+  systempause();
 }
